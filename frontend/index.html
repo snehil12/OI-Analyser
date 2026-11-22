@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OI Pulse</title>
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--panel2:#1c232c;--line:#2a323d;--text:#e6edf3;--mute:#8b98a5;
+--ce:#ef5350;--pe:#26a69a;--acc:#4c8dff;--warn:#f0b429}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
+.logo{font-weight:700;font-size:18px;letter-spacing:.3px}.logo b{color:var(--acc)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.tabbar{display:flex;gap:4px;overflow:auto;border-bottom:1px solid var(--line);padding:8px 20px;background:var(--panel)}
+.tab{white-space:nowrap;border:0;border-radius:8px;padding:8px 13px;background:transparent;color:var(--mute);font:inherit;cursor:pointer}
+.tab.on{background:#23334d;color:#fff}
+.page{display:none}.page.on{display:block}
+.chip{padding:5px 12px;border:1px solid var(--line);border-radius:999px;cursor:pointer;background:transparent;color:var(--mute);font:inherit}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+select,input{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit}
+.sp{flex:1}
+.pill{padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.pill.live{background:#15361f;color:#4ade80}.pill.demo{background:#3a2e10;color:var(--warn)}
+button.btn{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:7px 14px;font:inherit;cursor:pointer}
+button.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+main{padding:16px 20px;max-width:1400px;margin:0 auto}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card .k{color:var(--mute);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.card .v{font-size:22px;font-weight:700;margin-top:2px}
+.card .s{color:var(--mute);font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:1000px){.grid2{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:16px}
+.panel h3{margin:0 0 8px;font-size:14px;color:var(--mute);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.legend span{margin-left:12px;font-size:12px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+svg text{fill:var(--mute);font-size:11px}
+.tablewrap{overflow:auto;max-height:520px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel2);color:var(--mute);font-weight:600;font-size:12px}
+td.k{text-align:center;font-weight:700;background:var(--panel2)}
+tr.atm td{background:#1d2a44}tr.atm td.k{background:#27427a}
+.pos{color:var(--pe)}.neg{color:var(--ce)}
+.tag{font-size:10px;padding:1px 6px;border-radius:6px;background:var(--panel2);color:var(--mute)}
+.hi{background:#29452f;color:#b7f7c4;font-weight:700}
+.tag.lb,.tag.sc{color:var(--pe)}.tag.sb,.tag.lu{color:var(--ce)}.tag.nooi{color:var(--warn)}.tag.flat{color:var(--mute)}
+.heat{min-width:112px;text-align:center;font-size:11px;font-weight:700;border-radius:7px;padding:6px 8px}
+.heat.long,.heat.cover{background:#15361f;color:#4ade80}.heat.short,.heat.unwind{background:#3a1616;color:#ff9e9e}.heat.wait,.heat.neutral{background:var(--panel2);color:var(--mute)}
+#err{background:#3a1616;border:1px solid #6b2a2a;color:#ffb4b4;padding:10px 14px;border-radius:10px;margin-bottom:12px;display:none}
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:20}
+#modal .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;width:min(460px,92vw)}
+#modal h2{margin:0 0 6px}#modal p{color:var(--mute);margin:0 0 14px}
+#modal input[type=text],#modal input[type=password]{width:100%;margin-bottom:10px;padding:10px 12px}
+#modal .row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+#merr{color:#ff8e8e;min-height:18px;font-size:13px;margin-bottom:6px}
+a{color:var(--acc)}
+.small{font-size:12px;color:var(--mute)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">OI<b>Pulse</b></div>
+  <div class="chips" id="chips"></div>
+  <input id="custom" placeholder="Stock e.g. RELIANCE" style="width:160px">
+  <select id="expiry"></select>
+  <select id="window">
+    <option value="10">±10 strikes</option><option value="15" selected>±15 strikes</option>
+    <option value="25">±25 strikes</option><option value="100">All</option>
+  </select>
+  <div class="sp"></div>
+  <span class="small" id="upd"></span>
+  <span class="pill demo" id="pill">DEMO</span>
+  <button class="btn ghost" id="keyBtn">API key</button>
+</header>
+<nav class="tabbar" id="tabs"></nav>
+
+<main>
+  <div id="err"></div>
+  <section id="page-dashboard" class="page on">
+  <div class="cards" id="cards"></div>
+  <div class="grid2">
+    <div class="panel"><h3>Open Interest by strike<span class="legend"><span><i class="dot" style="background:var(--ce)"></i>Calls</span><span><i class="dot" style="background:var(--pe)"></i>Puts</span></span></h3><div id="c1"></div></div>
+    <div class="panel"><h3>Change in OI<span class="legend"><span><i class="dot" style="background:var(--ce)"></i>Calls</span><span><i class="dot" style="background:var(--pe)"></i>Puts</span></span></h3><div id="c2"></div></div>
+  </div>
+  <div class="panel"><h3>PCR trend (this session)<span class="legend"><span><i class="dot" style="background:var(--acc)"></i>PCR</span><span><i class="dot" style="background:var(--warn)"></i>Spot</span></span></h3><div id="c3"></div></div>
+  </section>
+  <section id="page-chain" class="page">
+    <div class="panel"><h3>Option chain <span class="small">Highlight maximum OI, OI change, and volume</span></h3><div class="tablewrap"><table id="tbl"></table></div></div>
+  </section>
+  <section id="page-analysis" class="page">
+    <div class="cards" id="analysis-cards"></div>
+    <div class="grid2"><div class="panel"><h3>Call and put OI</h3><div id="analysis-oi"></div></div><div class="panel"><h3>Change in OI</h3><div id="analysis-change"></div></div></div>
+    <div class="panel"><h3>OI change pulse <span class="small">Put ΔOI − Call ΔOI; sampled every 20 seconds</span></h3><p class="small">Net PCR = |Put ΔOI| ÷ |Call ΔOI|. Above 1 indicates bullish put-side dominance; below 1 indicates bearish call-side dominance. The direction arrow shows whether that OI difference is strengthening or weakening.</p><div class="tablewrap"><table id="pulse-table"></table></div></div>
+  </section>
+  <section id="page-stats" class="page">
+    <div class="panel"><h3>OI statistics by strike <span class="small">Largest positions and changes</span></h3><div class="tablewrap"><table id="stats-table"></table></div></div>
+  </section>
+  <section id="page-spurt" class="page">
+    <div class="panel"><h3>OI spurts <span class="small">Ranked by absolute OI change</span></h3><div class="tablewrap"><table id="spurt-table"></table></div></div>
+  </section>
+  <section id="page-premium" class="page">
+    <div class="cards" id="premium-cards"></div>
+    <div class="grid2"><div class="panel"><h3>Call premiums by strike</h3><div id="premium-ce"></div></div><div class="panel"><h3>Put premiums by strike</h3><div id="premium-pe"></div></div></div>
+  </section>
+  <section id="page-history" class="page">
+    <div class="panel"><h3>Historical option chain <span class="small">Saved snapshots from this app · 30 day retention</span></h3>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 14px"><label>Date <select id="hist-date"></select></label><label>Snapshot time <select id="hist-time"></select></label><span class="small" id="hist-status"></span></div>
+      <div class="tablewrap"><table id="history-table"></table></div>
+    </div>
+  </section>
+  <section id="page-futures" class="page">
+    <div class="panel"><h3>Stock &amp; index futures signals <span class="small">Live price and open interest</span></h3>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 14px">
+        <label>Exchange <select id="future-exchange"><option value="nse_fo">NSE F&amp;O</option><option value="bse_fo">BSE F&amp;O</option></select></label>
+        <label>Symbol <input id="future-symbol" value="NIFTY" placeholder="e.g. NIFTY or RELIANCE" style="width:190px"></label>
+        <button class="btn" id="future-search">Find contracts</button>
+        <label>Future contract <select id="future-contract" style="min-width:240px"></select></label>
+        <button class="btn ghost" id="future-refresh">Refresh signals</button>
+      </div>
+      <div class="small" id="future-status">Connect Kotak Neo, choose a symbol, then find its active futures contracts.</div>
+    </div>
+    <div class="cards" id="future-cards"></div>
+    <div class="panel"><h3>Build up classification by timeframe</h3><div class="tablewrap"><table id="future-signals-table"></table></div>
+      <p class="small">Long Buildup: price ↑, OI ↑ · Short Buildup: price ↓, OI ↑ · Short Covering: price ↑, OI ↓ · Long Unwinding: price ↓, OI ↓. Signals become available after enough saved quote history exists for each timeframe.</p>
+    </div>
+  </section>
+  <section id="page-heatmap" class="page">
+    <div class="panel"><h3>Futures heat map <span class="small">Entire F&amp;O futures universe · nearest active contract</span></h3>
+      <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin:10px 0 14px">
+        <label>Exchange <select id="heatmap-exchange"><option value="all">NSE + BSE</option><option value="nse_fo">NSE F&amp;O</option><option value="bse_fo">BSE F&amp;O</option></select></label>
+        <label>Filter <select id="heatmap-filter"><option value="all">All signals</option><option value="bullish">Bullish: Long Buildup / Short Covering</option><option value="bearish">Bearish: Short Buildup / Long Unwinding</option><option value="collecting">Collecting / Neutral</option></select></label>
+        <button class="btn" id="heatmap-scan">Scan entire F&amp;O</button>
+      </div>
+      <div class="small" id="heatmap-status">Connect Kotak Neo to scan every active index and stock futures contract. Leave this page open to collect quotes once per minute.</div><div class="small" id="heatmap-filter-status">Filter checks all six timeframes and shows matching contracts.</div>
+      <div class="small" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px"><span><i class="dot" style="background:#15361f"></i>Bullish: Long Buildup / Short Covering</span><span><i class="dot" style="background:#3a1616"></i>Bearish: Short Buildup / Long Unwinding</span><span><i class="dot" style="background:#2a323d"></i>Collecting / Neutral</span></div>
+    </div>
+    <div class="panel"><div class="tablewrap"><table id="futures-heatmap"></table></div></div>
+  </section>
+  <p class="small">Educational analytics, not investment advice. OI change falls back to "since you opened the app today" when the API does not return it.</p>
+</main>
+
+<div id="modal"><div class="box">
+  <h2>Connect Kotak Neo</h2>
+  <p>Paste your Neo Trade API token once. Everything else runs on the server.<br>
+  <span class="small">Neo app/web → Invest → Trade API → API Dashboard → copy the token.</span></p>
+  <input type="password" id="keyIn" placeholder="Consumer key / access token" autocomplete="off">
+  <label class="small"><input type="checkbox" id="remember" checked> Remember on this machine</label>
+  <div id="merr"></div>
+  <div class="row">
+    <button class="ghost btn" id="demoBtn">Use demo data</button>
+    <button class="btn" id="saveBtn">Connect &amp; start</button>
+  </div>
+</div></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const UNDERLYINGS=["NIFTY","BANKNIFTY","FINNIFTY","MIDCPNIFTY","SENSEX"];
+let und="NIFTY", expiry="", timer=null, last=null, activePage="dashboard";
+const PAGES=[["dashboard","Dashboard"],["analysis","OI Analysis"],["stats","OI Statistics"],["spurt","OI Spurt"],["chain","Option Chain"],["premium","Options Premium"],["history","Historical Chain"],["futures","Futures Signals"],["heatmap","Futures Heat Map"]];
+let futuresPollAt=0,futuresLoading=false,heatmapPollAt=0,heatmapLoading=false,heatmapData=null;
+
+const fmt=n=>{n=+n||0;const a=Math.abs(n);return a>=1e7?(n/1e7).toFixed(2)+"Cr":a>=1e5?(n/1e5).toFixed(2)+"L":a>=1e3?(n/1e3).toFixed(1)+"K":n.toFixed(0)};
+const sgn=n=>`<span class="${n>=0?'pos':'neg'}">${n>0?'+':''}${fmt(n)}</span>`;
+const api=async(p,o)=>{const r=await fetch(p,o);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.detail||r.statusText);return j};
+const showErr=m=>{const e=$("#err");e.style.display=m?"block":"none";e.textContent=m||""};
+
+function chips(){
+  $("#chips").innerHTML=UNDERLYINGS.map(u=>`<button class="chip ${u===und?'on':''}" data-u="${u}">${u}</button>`).join("");
+  document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{und=b.dataset.u;expiry="";$("#custom").value="";chips();loadExpiries()});
+}
+function tabs(){
+  $("#tabs").innerHTML=PAGES.map(([id,label])=>`<button class="tab ${activePage===id?'on':''}" data-page="${id}">${label}</button>`).join("");
+  document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{activePage=b.dataset.page;tabs();document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id===`page-${activePage}`));if(last)render(last);if(activePage==="history")loadHistoryDates();if(activePage==="futures"&&$("#future-contract").value)loadFuturesSignals();if(activePage==="heatmap")loadFuturesHeatmap()});
+}
+$("#custom").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.value.trim()){und=e.target.value.trim().toUpperCase();expiry="";chips();loadExpiries()}});
+$("#expiry").onchange=e=>{expiry=e.target.value;refresh();if(activePage==="history")loadHistoryDates()};
+$("#window").onchange=()=>last&&render(last);
+$("#future-search").onclick=findFutureContracts;
+$("#future-refresh").onclick=loadFuturesSignals;
+$("#future-contract").onchange=loadFuturesSignals;
+$("#future-symbol").addEventListener("keydown",e=>e.key==="Enter"&&findFutureContracts());
+$("#heatmap-scan").onclick=()=>loadFuturesHeatmap();
+$("#heatmap-filter").onchange=()=>heatmapData&&renderFuturesHeatmap(heatmapData);
+
+async function loadExpiries(){
+  try{
+    const {expiries}=await api("/api/expiries?underlying="+und);
+    $("#expiry").innerHTML=expiries.map(e=>`<option>${e}</option>`).join("");
+    expiry=expiries[0]||"";
+    showErr("");
+  }catch(e){showErr("Expiries: "+e.message)}
+  refresh();
+  if(activePage==="history")loadHistoryDates();
+}
+
+const historyUrl=()=>`/api/history/chain?underlying=${encodeURIComponent(und)}&expiry=${encodeURIComponent(expiry||"nearest")}`;
+async function loadHistoryDates(){
+  const dateSelect=$("#hist-date"), timeSelect=$("#hist-time");
+  dateSelect.innerHTML="";timeSelect.innerHTML="";$("#history-table").innerHTML="";$("#hist-status").textContent="Loading saved dates…";
+  try{
+    const {dates=[]}=await api(historyUrl());
+    if(!dates.length){$("#hist-status").textContent="No saved snapshots for this underlying and expiry yet. Keep the app open; it saves a snapshot once per minute.";return}
+    dateSelect.innerHTML=dates.map(d=>`<option value="${d}">${d}</option>`).join("");
+    dateSelect.onchange=loadHistoryTimes;timeSelect.onchange=loadHistorySnapshot;
+    await loadHistoryTimes();
+  }catch(e){$("#hist-status").textContent=e.message}
+}
+async function loadHistoryTimes(){
+  try{
+    const date=$("#hist-date").value;
+    const {snapshots=[]}=await api(`${historyUrl()}&date=${encodeURIComponent(date)}`);
+    if(!snapshots.length){$("#hist-status").textContent="No snapshots saved on this date.";$("#history-table").innerHTML="";return}
+    $("#hist-time").innerHTML=snapshots.map(s=>`<option value="${s.id}">${new Date(s.t*1000).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})} · spot ${Number(s.spot).toLocaleString("en-IN")} · ${s.mode}</option>`).join("");
+    $("#hist-status").textContent=`${snapshots.length} saved snapshots`;
+    await loadHistorySnapshot();
+  }catch(e){$("#hist-status").textContent=e.message}
+}
+async function loadHistorySnapshot(){
+  const id=$("#hist-time").value;if(!id)return;
+  try{
+    const snap=await api(`${historyUrl()}&snapshot_id=${encodeURIComponent(id)}`);
+    const atm=snap.chain.reduce((best,r)=>Math.abs(r.strike-snap.spot)<Math.abs(best.strike-snap.spot)?r:best,snap.chain[0]).strike;
+    table(snap.chain,atm,"#history-table");
+  }catch(e){$("#hist-status").textContent=e.message}
+}
+
+async function findFutureContracts(){
+  const symbol=$("#future-symbol").value.trim().toUpperCase();
+  $("#future-status").textContent="Searching active futures…";
+  $("#future-contract").innerHTML="";$("#future-signals-table").innerHTML="";$("#future-cards").innerHTML="";
+  try{
+    const q=`/api/futures/contracts?symbol=${encodeURIComponent(symbol)}&exchange_segment=${encodeURIComponent($("#future-exchange").value)}`;
+    const {contracts=[]}=await api(q);
+    $("#future-contract").innerHTML=contracts.map(c=>`<option value="${c.neosymbol}" data-name="${c.trading_symbol}">${c.trading_symbol}</option>`).join("");
+    $("#future-status").textContent=`${contracts.length} contracts found. The app saves a quote each minute while this page is open.`;
+    await loadFuturesSignals();
+  }catch(e){$("#future-status").textContent=e.message}
+}
+async function loadFuturesSignals(){
+  const selector=$("#future-contract"),neo=selector.value;if(!neo||futuresLoading)return;
+  futuresLoading=true;$("#future-status").textContent="Fetching futures price and OI…";
+  try{
+    const name=selector.selectedOptions[0]?.dataset.name||"";
+    const d=await api(`/api/futures/signals?neosymbol=${encodeURIComponent(neo)}&trading_symbol=${encodeURIComponent(name)}`);
+    const t=new Date(d.sampled_at*1000).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    $("#future-status").textContent=`${d.trading_symbol} · updated ${t} IST · ${d.sample_count} saved samples`;
+    $("#future-cards").innerHTML=[["Futures price",d.price.toLocaleString("en-IN",{maximumFractionDigits:2}),d.trading_symbol],["Open interest",fmt(d.oi),"Current contract OI"],["Last saved quote",t,"Samples retained for 30 days"]].map(([k,v,s])=>`<div class="card"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+    const cls={"Long Buildup":"lb","Short Buildup":"sb","Short Covering":"sc","Long Unwinding":"lu","Neutral":"flat"};
+    $("#future-signals-table").innerHTML=`<thead><tr><th>Timeframe</th><th>Signal</th><th>Price change</th><th>Price %</th><th>OI change</th><th>OI %</th><th>Baseline time</th></tr></thead><tbody>`+d.signals.map(s=>`<tr><td>${s.timeframe}</td><td><span class="tag ${cls[s.signal]||'flat'}">${s.signal}</span></td><td>${s.status==='ready'?sgn(s.price_change):'—'}</td><td>${s.status==='ready'?`${s.price_change_pct>0?'+':''}${s.price_change_pct.toFixed(2)}%`:'—'}</td><td>${s.status==='ready'?sgn(s.oi_change):'—'}</td><td>${s.status==='ready'?`${s.oi_change_pct>0?'+':''}${s.oi_change_pct.toFixed(2)}%`:'—'}</td><td>${s.from?new Date(s.from*1000).toLocaleString('en-IN',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'}):'Need more history'}</td></tr>`).join("")+"</tbody>";
+    futuresPollAt=Date.now();
+  }catch(e){$("#future-status").textContent=e.message}
+  futuresLoading=false;
+}
+async function loadFuturesHeatmap(){
+  if(heatmapLoading)return;
+  heatmapLoading=true;$("#heatmap-status").textContent="Finding nearest futures contracts and reading live quotes…";
+  try{
+    const q=`/api/futures/heatmap?exchange_segment=${encodeURIComponent($("#heatmap-exchange").value)}`;
+    const d=await api(q);heatmapData=d;renderFuturesHeatmap(d);
+    const valid=d.rows.filter(r=>!r.error).length;
+    $("#heatmap-status").textContent=`${valid} of ${d.rows.length} contracts quoted · updated ${new Date(d.sampled_at*1000).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})} IST · refreshes every minute while open`;
+    heatmapPollAt=Date.now();
+  }catch(e){$("#heatmap-status").textContent=e.message}
+  heatmapLoading=false;
+}
+function renderFuturesHeatmap(d){
+  const labels=["5 min","15 min","30 min","1 hour","4 hours","1 day"],filter=$("#heatmap-filter").value;
+  const bullish=["Long Buildup","Short Covering"],bearish=["Short Buildup","Long Unwinding"];
+  const matches=r=>{if(filter==="all")return true;if(r.error)return filter==="collecting";const signals=r.signals||[],hasBull=signals.some(s=>s.status==="ready"&&bullish.includes(s.signal)),hasBear=signals.some(s=>s.status==="ready"&&bearish.includes(s.signal));return filter==="bullish"?hasBull:filter==="bearish"?hasBear:!hasBull&&!hasBear};
+  const rows=d.rows.filter(matches),color={"Long Buildup":"long","Short Covering":"cover","Short Buildup":"short","Long Unwinding":"unwind","Neutral":"neutral"};
+  $("#futures-heatmap").innerHTML=`<thead><tr><th style="text-align:left">Symbol / contract</th><th>Price</th><th>Open interest</th>${labels.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>`+rows.map(r=>`<tr><td style="text-align:left"><strong>${r.symbol} (${r.exchange_segment==='nse_fo'?'NSE':'BSE'})</strong><br><span class="small">${r.trading_symbol||r.error||""}</span></td><td>${r.price?Number(r.price).toLocaleString("en-IN",{maximumFractionDigits:2}):"—"}</td><td>${r.oi?fmt(r.oi):"—"}</td>${labels.map(label=>{const s=(r.signals||[]).find(x=>x.timeframe===label);if(r.error)return `<td><div class="heat wait" title="${r.error}">Unavailable</div></td>`;if(!s||s.status!=="ready")return `<td><div class="heat wait" title="Waiting for sufficient saved quote history">Collecting</div></td>`;const title=`Price Δ ${Number(s.price_change).toFixed(2)} (${Number(s.price_change_pct).toFixed(2)}%) · OI Δ ${fmt(s.oi_change)} (${Number(s.oi_change_pct).toFixed(2)}%)`;return `<td><div class="heat ${color[s.signal]||"neutral"}" title="${title}">${s.signal}</div></td>`}).join("")}</tr>`).join("")+"</tbody>";
+  $("#heatmap-filter-status").textContent=`Showing ${rows.length} of ${d.rows.length} contracts · filter checks all six timeframes; collecting/neutral means no directional signal is available yet.`;
+}
+
+async function refresh(){
+  try{
+    const q=`/api/chain?underlying=${encodeURIComponent(und)}`+(expiry?`&expiry=${expiry}`:"")+"&count=60";
+    last=await api(q); showErr(""); render(last);
+  }catch(e){showErr(e.message)}
+}
+
+function render(d){
+  const a=d.analytics, live=d.mode==="live";
+  $("#pill").textContent=live?"LIVE":"DEMO"; $("#pill").className="pill "+(live?"live":"demo");
+  $("#upd").textContent="Updated "+d.updated+" IST";
+  const mc=a.mood==="Bullish"?"pos":a.mood==="Bearish"?"neg":"";
+  $("#cards").innerHTML=[
+    ["Spot",a.spot.toLocaleString("en-IN",{maximumFractionDigits:2}),"ATM "+a.atm],
+    ["PCR (OI)",a.pcr.toFixed(2),`<span class="${mc}">${a.mood}</span>`],
+    ["Max pain",a.max_pain,""],
+    ["Resistance",a.resistance[0],"then "+a.resistance.slice(1).join(", ")],
+    ["Support",a.support[0],"then "+a.support.slice(1).join(", ")],
+    ["Call OI",fmt(a.ce_oi),"Δ "+sgn(a.ce_oi_chg)],
+    ["Put OI",fmt(a.pe_oi),"Δ "+sgn(a.pe_oi_chg)],
+    ["Flow",`<span style="font-size:14px">${a.flow}</span>`,""]
+  ].map(([k,v,s])=>`<div class="card"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+
+  const w=+$("#window").value;
+  const i0=d.chain.findIndex(r=>r.strike===a.atm);
+  const rows=d.chain.slice(Math.max(0,i0-w),i0+w+1);
+  bars("#c1",rows,r=>r.ce.oi,r=>r.pe.oi,a.spot,false);
+  bars("#c2",rows,r=>r.ce.oi_chg,r=>r.pe.oi_chg,a.spot,true);
+  line("#c3",a.history);
+  table(rows,a.atm);
+  extraModules(d,rows);
+}
+
+function extraModules(d,rows){
+  const a=d.analytics, all=d.chain;
+  $("#analysis-cards").innerHTML=[["PCR (OI)",a.pcr.toFixed(2),a.mood],["Call OI change",fmt(a.ce_oi_chg),""],["Put OI change",fmt(a.pe_oi_chg),""],["Max pain",a.max_pain,""],["OI change source",a.oi_change_source,"API or session baseline"]].map(([k,v,s])=>`<div class="card"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+  bars("#analysis-oi",rows,r=>r.ce.oi,r=>r.pe.oi,a.spot,false);
+  bars("#analysis-change",rows,r=>r.ce.oi_chg,r=>r.pe.oi_chg,a.spot,true);
+  const pulse=[...(a.history||[])].slice().reverse();
+  $("#pulse-table").innerHTML=`<thead><tr><th>Time</th><th>Spot</th><th>Call ΔOI</th><th>Put ΔOI</th><th>Diff OI</th><th>Direction</th><th>Change in direction</th><th>Direction %</th><th>Net PCR</th><th>Sentiment</th></tr></thead><tbody>`+pulse.map(p=>`<tr><td>${new Date(p.t*1000).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</td><td>${Number(p.spot).toLocaleString("en-IN",{maximumFractionDigits:2})}</td><td>${sgn(p.call_change||0)}</td><td>${sgn(p.put_change||0)}</td><td>${sgn(p.diff_oi||0)}</td><td><span class="tag ${p.direction==='up'?'lb':p.direction==='down'?'sb':'flat'}">${p.direction==='up'?'↑ Rising':p.direction==='down'?'↓ Falling':'→ Flat'}</span></td><td>${p.direction_change==null?'—':sgn(p.direction_change)}</td><td>${p.direction_pct==null?'—':`${p.direction_pct>0?'+':''}${p.direction_pct.toFixed(2)}%`}</td><td>${p.net_pcr==null?'—':p.net_pcr.toFixed(2)}</td><td><span class="tag ${p.sentiment==='Bullish'?'lb':p.sentiment==='Bearish'?'sb':'flat'}">${p.sentiment}</span></td></tr>`).join("")+`</tbody>`;
+  const statRows=[...all].sort((x,y)=>Math.max(y.ce.oi,y.pe.oi)-Math.max(x.ce.oi,x.pe.oi));
+  $("#stats-table").innerHTML=`<thead><tr><th>Strike</th><th>Call OI</th><th>Call ΔOI</th><th>Put OI</th><th>Put ΔOI</th><th>PCR</th><th>Call LTP</th><th>Put LTP</th></tr></thead><tbody>`+statRows.map(r=>`<tr class="${r.strike===a.atm?'atm':''}"><td class="k">${r.strike}</td><td>${fmt(r.ce.oi)}</td><td>${sgn(r.ce.oi_chg)}</td><td>${fmt(r.pe.oi)}</td><td>${sgn(r.pe.oi_chg)}</td><td>${r.ce.oi?(r.pe.oi/r.ce.oi).toFixed(2):"-"}</td><td>${r.ce.ltp.toFixed(2)}</td><td>${r.pe.ltp.toFixed(2)}</td></tr>`).join("")+`</tbody>`;
+  const spurts=all.flatMap(r=>[{strike:r.strike,side:"Call",oi:r.ce.oi,change:r.ce.oi_chg,ltp:r.ce.ltp,signal:r.ce.signal},{strike:r.strike,side:"Put",oi:r.pe.oi,change:r.pe.oi_chg,ltp:r.pe.ltp,signal:r.pe.signal}]).sort((x,y)=>Math.abs(y.change)-Math.abs(x.change)).slice(0,30);
+  $("#spurt-table").innerHTML=`<thead><tr><th>Strike</th><th>Side</th><th>OI</th><th>ΔOI</th><th>Premium</th><th>Interpretation</th></tr></thead><tbody>`+spurts.map(r=>`<tr><td class="k">${r.strike}</td><td>${r.side}</td><td>${fmt(r.oi)}</td><td>${sgn(r.change)}</td><td>${r.ltp.toFixed(2)}</td><td>${r.signal||"—"}</td></tr>`).join("")+`</tbody>`;
+  const bestCall=all.reduce((x,r)=>r.ce.ltp>x.ce.ltp?r:x,all[0]),bestPut=all.reduce((x,r)=>r.pe.ltp>x.pe.ltp?r:x,all[0]);
+  $("#premium-cards").innerHTML=[["Highest call premium",`${bestCall.strike} · ₹${bestCall.ce.ltp.toFixed(2)}`,`Δ ₹${bestCall.ce.ltp_chg.toFixed(2)}`],["Highest put premium",`${bestPut.strike} · ₹${bestPut.pe.ltp.toFixed(2)}`,`Δ ₹${bestPut.pe.ltp_chg.toFixed(2)}`],["ATM",a.atm,`Spot ${a.spot.toLocaleString("en-IN")}`]].map(([k,v,s])=>`<div class="card"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+  premiumBars("#premium-ce",rows,r=>r.ce.ltp,"var(--ce)");premiumBars("#premium-pe",rows,r=>r.pe.ltp,"var(--pe)");
+}
+
+function premiumBars(sel,rows,get,color){
+  const W=680,H=260,m={l:45,r:10,t:10,b:35},max=Math.max(1,...rows.map(get)),bw=(W-m.l-m.r)/rows.length;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%">`;
+  for(let i=0;i<=4;i++){const v=max*i/4,y=m.t+(H-m.t-m.b)*(1-i/4);s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}" stroke="#2a323d"/><text x="${m.l-6}" y="${y+4}" text-anchor="end">${v.toFixed(0)}</text>`}
+  rows.forEach((r,i)=>{const value=get(r),height=(H-m.t-m.b)*value/max,x=m.l+i*bw,y=H-m.b-height;s+=`<rect x="${x+bw*.15}" width="${bw*.7}" y="${y}" height="${height}" fill="${color}"><title>${r.strike}: ₹${value.toFixed(2)}</title></rect>`;if(rows.length<=31||i%2===0)s+=`<text x="${x+bw/2}" y="${H-12}" text-anchor="middle">${r.strike}</text>`});
+  $(sel).innerHTML=s+"</svg>";
+}
+
+function bars(sel,rows,fc,fp,spot,signed){
+  const W=680,H=300,m={l:46,r:10,t:10,b:34};
+  const vals=rows.flatMap(r=>[fc(r),fp(r)]);
+  const mx=Math.max(1,...vals.map(Math.abs)), mn=signed?Math.min(0,...vals):0, top=signed?Math.max(0,...vals):mx;
+  const y=v=>m.t+(H-m.t-m.b)*(1-(v-mn)/((top-mn)||1));
+  const bw=(W-m.l-m.r)/rows.length;
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%">`;
+  for(let i=0;i<=4;i++){const v=mn+(top-mn)*i/4;s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="#2a323d"/><text x="${m.l-6}" y="${y(v)+4}" text-anchor="end">${fmt(v)}</text>`}
+  rows.forEach((r,i)=>{
+    const x=m.l+i*bw, c=fc(r), p=fp(r), z=y(0);
+    const bar=(v,col,off)=>`<rect x="${x+bw*(.08+off)}" width="${bw*.4}" y="${Math.min(y(v),z)}" height="${Math.abs(y(v)-z)}" fill="${col}"><title>${r.strike}: ${fmt(v)}</title></rect>`;
+    s+=bar(c,"var(--ce)",0)+bar(p,"var(--pe)",.44);
+    if(rows.length<=31||i%2===0)s+=`<text x="${x+bw/2}" y="${H-14}" text-anchor="middle" transform="rotate(-45 ${x+bw/2} ${H-14})">${r.strike}</text>`;
+  });
+  const lo=rows[0].strike,hi=rows[rows.length-1].strike;
+  if(spot>=lo&&spot<=hi){const sx=m.l+bw*((rows.length-1)*(spot-lo)/((hi-lo)||1)+.5);
+    s+=`<line x1="${sx}" x2="${sx}" y1="${m.t}" y2="${H-m.b}" stroke="var(--warn)" stroke-dasharray="4 3"/>`}
+  $(sel).innerHTML=s+"</svg>";
+}
+
+function line(sel,h){
+  if(!h||h.length<2){$(sel).innerHTML='<div class="small" style="padding:30px;text-align:center">Collecting data… the trend builds as the page refreshes.</div>';return}
+  const W=1360,H=200,m={l:46,r:56,t:10,b:24};
+  const xs=h.map(p=>p.t),x0=xs[0],x1=xs[xs.length-1]||x0+1;
+  const X=t=>m.l+(W-m.l-m.r)*(t-x0)/((x1-x0)||1);
+  const sc=(arr)=>{const lo=Math.min(...arr),hi=Math.max(...arr),pad=(hi-lo)*.1||.01;return v=>m.t+(H-m.t-m.b)*(1-(v-(lo-pad))/((hi-lo+2*pad)||1))};
+  const yp=sc(h.map(p=>p.pcr)),ys=sc(h.map(p=>p.spot));
+  const path=(f,Y)=>h.map((p,i)=>(i?"L":"M")+X(p.t).toFixed(1)+","+Y(f(p)).toFixed(1)).join(" ");
+  const tl=t=>new Date(t*1000).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+  $(sel).innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%"><path d="${path(p=>p.pcr,yp)}" fill="none" stroke="var(--acc)" stroke-width="2"/><path d="${path(p=>p.spot,ys)}" fill="none" stroke="var(--warn)" stroke-width="2"/>
+  <text x="${m.l}" y="${H-6}">${tl(x0)}</text><text x="${W-m.r}" y="${H-6}" text-anchor="end">${tl(x1)}</text>
+  <text x="${m.l-6}" y="${m.t+8}" text-anchor="end">PCR ${h[h.length-1].pcr.toFixed(2)}</text><text x="${W-m.r+6}" y="${m.t+8}">${h[h.length-1].spot.toFixed(0)}</text></svg>`;
+}
+
+function table(rows,atm,target="#tbl"){
+  const signalClass={"Long Buildup":"lb","Short Buildup":"sb","Short Covering":"sc","Long Unwinding":"lu","No OI Change":"nooi","Flat":"flat"};
+  const tag=s=>s?`<span class="tag ${signalClass[s]||"flat"}" title="${s}">${s}</span>`:"";
+  const maxima={ceOi:Math.max(...rows.map(r=>r.ce.oi)),peOi:Math.max(...rows.map(r=>r.pe.oi)),ceChg:Math.max(...rows.map(r=>r.ce.oi_chg)),peChg:Math.max(...rows.map(r=>r.pe.oi_chg)),ceVol:Math.max(...rows.map(r=>r.ce.vol)),peVol:Math.max(...rows.map(r=>r.pe.vol))};
+  const cell=(v,max,content)=>`<td class="${v===max&&v!==0?'hi':''}">${content}</td>`;
+  $(target).innerHTML=`<thead><tr><th>Signal</th><th>OI</th><th>ΔOI</th><th>Vol</th><th>IV</th><th>LTP</th><th style="text-align:center">Strike</th><th>LTP</th><th>IV</th><th>Vol</th><th>ΔOI</th><th>OI</th><th>Signal</th></tr></thead><tbody>`+
+  rows.map(r=>`<tr class="${r.strike===atm?'atm':''}"><td>${tag(r.ce.signal)}</td>${cell(r.ce.oi,maxima.ceOi,fmt(r.ce.oi))}${cell(r.ce.oi_chg,maxima.ceChg,sgn(r.ce.oi_chg))}${cell(r.ce.vol,maxima.ceVol,fmt(r.ce.vol))}<td>${r.ce.iv?r.ce.iv.toFixed(1):"-"}</td><td>${r.ce.ltp.toFixed(2)}</td><td class="k">${r.strike}</td><td>${r.pe.ltp.toFixed(2)}</td><td>${r.pe.iv?r.pe.iv.toFixed(1):"-"}</td>${cell(r.pe.vol,maxima.peVol,fmt(r.pe.vol))}${cell(r.pe.oi_chg,maxima.peChg,sgn(r.pe.oi_chg))}${cell(r.pe.oi,maxima.peOi,fmt(r.pe.oi))}<td>${tag(r.pe.signal)}</td></tr>`).join("")+"</tbody>";
+}
+
+/* ---- key popup ---- */
+const modal=$("#modal");
+const openModal=()=>{modal.style.display="flex";$("#keyIn").focus()};
+$("#keyBtn").onclick=openModal;
+$("#demoBtn").onclick=async()=>{await api("/api/demo",{method:"POST"});modal.style.display="none";loadExpiries()};
+$("#saveBtn").onclick=async()=>{
+  const key=$("#keyIn").value.trim(); $("#merr").textContent="";
+  if(!key){$("#merr").textContent="Paste your key first.";return}
+  $("#saveBtn").disabled=true;$("#saveBtn").textContent="Connecting…";
+  try{
+    await api("/api/connect",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({consumer_key:key,remember:$("#remember").checked})});
+    $("#keyIn").value="";modal.style.display="none";loadExpiries();
+  }catch(e){$("#merr").textContent=e.message}
+  $("#saveBtn").disabled=false;$("#saveBtn").textContent="Connect & start";
+};
+$("#keyIn").addEventListener("keydown",e=>e.key==="Enter"&&$("#saveBtn").click());
+
+(async()=>{
+  chips();tabs();
+  const st=await api("/api/status");
+  if(!st.connected) openModal();
+  if(st.error)$("#merr").textContent=st.error;
+  await loadExpiries();
+  timer=setInterval(()=>{if(!document.hidden&&modal.style.display!=="flex"){if(activePage==="futures"){if(Date.now()-futuresPollAt>=60000)loadFuturesSignals()}else if(activePage==="heatmap"){if(Date.now()-heatmapPollAt>=60000)loadFuturesHeatmap()}else refresh()}},15000);
+})();
+</script>
+</body>
+</html>
